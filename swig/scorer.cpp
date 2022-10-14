@@ -182,6 +182,7 @@ std::vector<std::string> Scorer::make_ngram(PathTrie* prefix) {
     std::vector<int> prefix_vec;
 
     if (is_character_based_) {
+      if (current_node->character == SPACE_ID_) current_node = current_node->parent;
       new_node = current_node->get_path_vec(prefix_vec, SPACE_ID_, 1);
       current_node = new_node;
     } else {

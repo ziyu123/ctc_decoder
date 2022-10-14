@@ -82,6 +82,9 @@ PathTrie* PathTrie::get_path_trie(int new_char, bool reset) {
         new_path->parent = this;
         new_path->dictionary_ = dictionary_;
         new_path->dictionary_state_ = matcher_->Value().nextstate;
+        if(!reset){
+            new_path->dictionary_state_ = dictionary_->Start();
+        }
         new_path->has_dictionary_ = true;
         new_path->matcher_ = matcher_;
         children_.push_back(std::make_pair(new_char, new_path));

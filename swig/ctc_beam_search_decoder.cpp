@@ -106,7 +106,11 @@ std::vector<std::pair<double, std::vector<int>>> ctc_beam_search_decoder(
               prefix->log_prob_nb_cur, log_prob_c + prefix->log_prob_nb_prev);
         }
         // get new prefix
-        auto prefix_new = prefix->get_path_trie(c);
+	bool isnot_space = true;
+        if(c == space_id){
+           isnot_space = false;
+        }
+        auto prefix_new = prefix->get_path_trie(c, isnot_space);
         if (prefix_new != nullptr) {
           float log_p = -NUM_FLT_INF;
 
