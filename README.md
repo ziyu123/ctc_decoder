@@ -56,13 +56,13 @@ How language model in called in this implementation of ctc prefix beam search ?
 If the language model is char based (like the Mandarin lm), it will call the language model scorer all the times.
 If the language model is word based (like the English lm), it will only call the scorer whenever `space_id` is detected.
 
-## debug the [https://github.com/Slyne/ctc_decoder/issues/9](problem) about space in English language model 
+## debug the (problem)[https://github.com/Slyne/ctc_decoder/issues/9] about space in English language model 
 problem one:
-    For English asr model, use Alphabet as dict, space use "\▁" , the output result not space. 
+    For English asr model, use Alphabet as dict, space use "▁" , the output result not space. 
     this is because the [ctc_decoder](https://github.com/Slyne/ctc_decoder) not support space specified characters except " "  
     
 problem two:
-    For Chinese-English asr model, English use Alphabet as dict, space use "\▁" , the output result not space.
+    For Chinese-English asr model, English use Alphabet as dict, space use "▁" , the output result not space.
 
-Above two problem, also need modify your dict, use " " replace "\▁", then use this branch. 
+Above two problem, also need modify your dict, use " " replace "▁", then use this branch. 
 
