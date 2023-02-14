@@ -123,4 +123,26 @@ std::vector<std::string> map_batch(
     const std::vector<std::string> &vocabulary, size_t num_processes,
     bool greedy = false, int blank_id = 0);
 
+
+std::vector<std::pair<double, std::vector<int>>> ctc_beam_search_decoder_hotwords(
+    const std::vector<std::vector<double>> &log_probs_seq,
+    const std::vector<std::vector<int>> &log_probs_idx, PathTrie &root,
+    const bool start, size_t beam_size, 
+    const std::vector<std::string> &hot_words, 
+    const std::vector<double> &hot_words_weights,
+    int blank_id = 0, int space_id = -1,
+    double cutoff_prob = 0.999, Scorer *ext_scorer = nullptr);
+
+std::vector<std::vector<std::pair<double, std::vector<int>>>>
+ctc_beam_search_decoder_batch_hotwords(
+    const std::vector<std::vector<std::vector<double>>> &batch_log_probs_seq,
+    const std::vector<std::vector<std::vector<int>>> &batch_log_probs_idx,
+    std::vector<PathTrie *> &batch_root_trie,
+    const std::vector<bool> &batch_start, size_t beam_size,
+    size_t num_processes, 
+    const std::vector<std::string> &hot_words, 
+    const std::vector<double> &hot_words_weights,
+    int blank_id = 0, int space_id = -1,
+    double cutoff_prob = 0.999, Scorer *ext_scorer = nullptr);
+
 #endif  // CTC_BEAM_SEARCH_DECODER_H_

@@ -56,7 +56,7 @@ How language model in called in this implementation of ctc prefix beam search ?
 If the language model is char based (like the Mandarin lm), it will call the language model scorer all the times.
 If the language model is word based (like the English lm), it will only call the scorer whenever `space_id` is detected.
 
-## debug the (problem)[https://github.com/Slyne/ctc_decoder/issues/9] about space in English language model 
+## Debug the [problem](https://github.com/Slyne/ctc_decoder/issues/9) about space in English language model 
 problem one:
     For English asr model, use Alphabet as dict, space use "▁" , the output result not space. 
     this is because the [ctc_decoder](https://github.com/Slyne/ctc_decoder) not support space specified characters except " "  
@@ -66,3 +66,29 @@ problem two:
 
 Above two problem, also need modify your dict, use " " replace "▁", then use this branch. 
 
+## Add hot words for decoder
+when you want to use hotwords, you must add language model first. 
+How to add hot words:
+```
+hotwords = {'一首': 10.0, '幻一': 20.0}
+hot_words_seq = [k for k,v in hotwords.items()]
+hot_words_weights = [v for k,v in hotwords.items()]
+alpha = 0.5
+beta = 0.5
+lm_path = '../kenlm/lm/test.arpa'
+
+scorer = decoder.Scorer(alpha, beta, lm_path, vocab_list)
+......
+result1 =  ctc_beam_search_decoder_batch_hotwords(batch_log_probs_seq,
+                                            batch_log_probs_ids,
+                                            batch_root,
+                                            batch_start,
+                                            beam_size,
+                                            num_processes,
+                                            hot_words_seq,
+                                            hot_words_weights,
+                                            blank_id,
+                                            space_id,
+                                            cutoff_prob,
+                                            scorer) 
+```

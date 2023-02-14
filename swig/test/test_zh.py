@@ -51,6 +51,55 @@ def test_prefix_beam_search(batch_log_ctc_probs, batch_lens, beam_size, blank_id
                                             cutoff_prob)
     return score_hyps
 
+def test_prefix_beam_search_hotwords(batch_log_ctc_probs, batch_lens, beam_size, hot_words, blank_id, space_id, cutoff_prob=0.999, scorer=None):
+    """
+    Prefix beam search
+    Params:
+        batch_log_probs: B x T x V, the log probabilities of a sequence
+        batch_lens: B, the actual length of each sequence
+    Return:
+        hyps: a batch of beam candidates for each sequence
+        [[(score, cand_list1), (score, cand_list2), ....(score, cand_list_beam)],
+         [(score, cand_list1), (score, candi_list2), ...],
+         ...
+         []]
+    """
+    #batch_log_probs_seq, batch_log_probs_idx = torch.topk(batch_log_ctc_probs, beam_size, dim=-1)
+    batch_log_probs_idx = np.argsort(batch_log_ctc_probs, axis=-1)[:, :, ::-1]
+    batch_log_probs_seq = np.sort(batch_log_ctc_probs, axis=-1)[:, :, ::-1]
+    batch_log_probs_seq_list = batch_log_probs_seq.tolist()
+    batch_log_probs_idx_list = batch_log_probs_idx.tolist()
+    batch_len_list = batch_lens.tolist()
+    batch_log_probs_seq = []
+    batch_log_probs_ids = []
+    batch_start = []
+    batch_root = TrieVector()
+    root_dict = {}
+    for i in range(len(batch_len_list)):
+        num_sent = batch_len_list[i]
+        batch_log_probs_seq.append(batch_log_probs_seq_list[i][0:num_sent])
+        batch_log_probs_ids.append(batch_log_probs_idx_list[i][0:num_sent])
+        root_dict[i] = PathTrie()
+        batch_root.append(root_dict[i])
+        batch_start.append(True)
+    hot_words_seq = [k for k,v in hotwords.items()]
+    hot_words_weights = [v for k,v in hotwords.items()] 
+    num_processes = min(multiprocessing.cpu_count()-1, len(batch_log_probs_seq))
+    score_hyps = ctc_beam_search_decoder_batch(batch_log_probs_seq,
+                                            batch_log_probs_ids,
+                                            batch_root,
+                                            batch_start,
+                                            beam_size,
+                                            num_processes,
+					    hot_words_seq,
+					    hot_words_weights,
+                                            blank_id,
+                                            space_id,
+                                            cutoff_prob,
+					    scorer)
+    return score_hyps
+
+
 def test_batch_greedy_search(batch_log_ctc_probs, batch_lens, vocab_list, blank_id):
     """
     Greedy search
@@ -110,11 +159,14 @@ if __name__ == "__main__":
     beam_size = 10
     blank_id = 0
     space_id = 45
+    lm_path = "test.arpa" # test.arpa 可以自己训练一个
 
     vocab_list = load_vocab(word)
     input = np.load(input)
     batch_log_ctc_probs = input['batch_log_ctc_probs']
     batch_len = input["batch_len"]
+    lm_scorer =  Scorer(0.5, 0.5, lm_path, vocab_list)
+
     # ctc prefix beam search
     logging.info("Testing ctc prefix beam search")
     score_hyps = test_prefix_beam_search(batch_log_ctc_probs,
@@ -126,6 +178,25 @@ if __name__ == "__main__":
     # map the most probable cand ids to string
     batch_ids = [score_hyps[0][0][1], score_hyps[1][0][1]]
     map_sents = test_map_batch(batch_ids, vocab_list, blank_id)
+    logging.info(map_sents)
+
+    logging.info("Testing ctc prefix beam search add lm && hotwords")
+    hot_words={"幻一": 25.0, "一一首": 30.0}
+    score_hyps = test_prefix_beam_search_hotwords(batch_log_ctc_probs,
+                            batch_len,
+                            beam_size,
+                            hot_words,
+                            blank_id,
+                            space_id,
+                            cutoff_prob=0.9999999, scorer=lm_scorer)
+    # map the most probable cand ids to string
+    batch_ids = [score_hyps[0][0][1], score_hyps[1][0][1]]
+    map_sents = test_map_batch(batch_ids, vocab_list, blank_id)
+    for sub_score in score_hyps[0]:
+        k, v = sub_score
+        v_list = test_map_sent(v, vocab_list, False, blank_id)
+        logging.info("{}\t{}".format(k, v_list))
+
     logging.info(map_sents)
 
     logging.info("Testing greedy search")
