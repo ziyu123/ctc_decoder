@@ -341,17 +341,29 @@ std::vector<std::pair<double, std::vector<int>>> ctc_beam_search_decoder_hotword
             if (!hot_words.empty() and hot_words.size() == hot_words_weights.size() ) {
               // increase prob of prefix for every word that matches a word in the hot-words list
               std::string join_ngram;
+	      int string_size = 0;
               for (auto i = 0; i < ngram.size(); i++) {
                   if(ngram[i] != "<s>"){
                       join_ngram += ngram[i];
+		      string_size += 1;
                   }
               }
-              //join_ngram = accumulate(ngram.begin()+1, ngram.end(), std::string(""));
-              auto index = find(hot_words.begin(), hot_words.end(), join_ngram) - hot_words.begin(); 
-              if (index >= 0 and index <= hot_words.size() - 1){
-                  //printf("index: %d, ngram: %s,ngram prob: %.4f, hotword weights: %.4f\n", index, join_ngram.c_str(), ext_scorer->get_log_cond_prob(ngram), hot_words_weights[index]);
-                  // increase the log_cond_prob(prefix|LM)
-                  hot_boost += hot_words_weights[index];
+              //auto index = find(hot_words.begin(), hot_words.end(), join_ngram) - hot_words.begin();
+              //汉语的热词最少两个字, 热词字数小于ngram order, 那么hot_boost会加多次,需要调小相应的权重 
+              if (string_size >= 2) { 
+                  auto hot_index = -1;
+                  for (size_t idx = 0; idx < hot_words.size(); idx++){
+                      std::string::size_type is_hot = join_ngram.find(hot_words[idx]);
+                      if (is_hot != std::string::npos){
+                          hot_index = idx;
+                          break;
+                      }
+                  }
+                  if (hot_index != -1){
+                      // increase the log_cond_prob(prefix|LM)
+                      hot_boost += hot_words_weights[hot_index];
+                      //printf("index: %d, ngram: %s, hot_words: %s, ngram prob: %.4f, hotword weights: %.4f\n", index, join_ngram.c_str(), hot_words[hot_index].c_str(), ext_scorer->get_log_cond_prob(ngram), hot_words_weights[hot_index]);
+                  }
               }
             }
 

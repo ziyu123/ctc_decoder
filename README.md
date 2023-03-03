@@ -57,17 +57,18 @@ If the language model is char based (like the Mandarin lm), it will call the lan
 If the language model is word based (like the English lm), it will only call the scorer whenever `space_id` is detected.
 
 ## Debug the [problem](https://github.com/Slyne/ctc_decoder/issues/9) about space in English language model 
-problem one:
+### Problem one:   
     For English asr model, use Alphabet as dict, space use "▁" , the output result not space. 
     this is because the [ctc_decoder](https://github.com/Slyne/ctc_decoder) not support space specified characters except " "  
     
-problem two:
+### Problem two:  
     For Chinese-English asr model, English use Alphabet as dict, space use "▁" , the output result not space.
 
 Above two problem, also need modify your dict, use " " replace "▁", then use this branch. 
 
 ## Add hot words for decoder
-when you want to use hotwords, you must add language model first. 
+when you want to use hotwords, you must add language model first.    
+
 How to add hot words:
 ```
 hotwords = {'一首': 10.0, '幻一': 20.0}
